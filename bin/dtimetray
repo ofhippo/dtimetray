@@ -31,14 +31,13 @@ class Dtime # terrible hack-job prototype
     
     old_dtime = nil
 
-    while sleep 0.05
+    while sleep 0.4
       dtime_info = Dtime.dtime_info
       dtime_hours = Dtime.current_dtime_formatted_hours(dtime_info)
 
       if dtime_hours != old_dtime
         g.clearRect(0, 0, 100, 100)
-
-        g.drawString(dtime_hours, 1, 14)
+        g.drawString(dtime_hours, 1, 13)
         tray_icon.setImage(image)
       end
 
@@ -51,7 +50,7 @@ class Dtime # terrible hack-job prototype
   end
 
   def self.current_dtime
-    seconds_today * 1000 / 864
+    (ms_today * 1000 / 864).to_i
   end
 
   def self.dtime_info
@@ -75,9 +74,9 @@ class Dtime # terrible hack-job prototype
 
   private
 
-  def self.seconds_today
+  def self.ms_today
     now = Time.now
-    now.to_i - Time.local(now.year, now.month, now.day, 0).to_i
+    now.to_f - Time.local(now.year, now.month, now.day, 0).to_f
   end
 
 end
