@@ -1,0 +1,67 @@
+#!/usr/bin/env jruby
+
+include Java
+import java.awt.TrayIcon
+import java.awt.Toolkit
+import javax.imageio.ImageIO
+import java.io.File;
+
+class Dtime # terrible hack-job prototype
+
+  def self.run
+    popup = java.awt.PopupMenu.new
+    exititem = java.awt.MenuItem.new("Exit")
+    exititem.add_action_listener { java.lang.System::exit(0) }
+    popup.add(exititem)
+    
+    image = ImageIO.read(File.new("hours.png"))
+    tray_icon = TrayIcon.new(image, "DTIME!", popup)
+    tray_icon.image_auto_size = true
+    tray = java.awt.SystemTray::system_tray
+    tray.add(tray_icon)
+    
+    old_dtime = nil
+    while sleep 1
+      dtime_hours_only = Dtime.current_dtime_formatted_hours_only
+      if dtime_hours_only != old_dtime
+        image = ImageIO.read(File.new("hours.png"))
+        g = image.getGraphics()
+        g.drawString(dtime_hours_only, 0, 14)
+        tray_icon.setImage(image)
+      end
+
+      tray_icon.setToolTip(Dtime.current_dtime_formatted)
+      old_dtime = dtime_hours_only
+    end
+  end
+
+  def self.current_dtime
+    seconds_today * 1000 / 864
+  end
+
+  def self.current_dtime_formatted
+    dtime = self.current_dtime
+    s =  dtime % 100
+    m = (dtime / 100) % 10
+    h = (dtime - (m + s)) / 1000
+    "#{"%02d" % h}:#{m}:#{"%02d" % s}"
+  end
+
+  def self.current_dtime_formatted_hours_only
+    dtime = self.current_dtime
+    s =  dtime % 100
+    m = (dtime / 100) % 10
+    h = (dtime - (m + s)) / 1000
+    "%02d" % h
+  end
+
+  private
+
+  def self.seconds_today
+    now = Time.now
+    now.to_i - Time.local(now.year, now.month, now.day, 0).to_i
+  end
+
+end
+
+Dtime.run
