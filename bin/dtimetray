@@ -10,28 +10,43 @@ class Dtime # terrible hack-job prototype
 
   def self.run
     popup = java.awt.PopupMenu.new
+
+    dtime_in_menu = java.awt.MenuItem.new("")
+    popup.add(dtime_in_menu)
+
     exititem = java.awt.MenuItem.new("Exit")
     exititem.add_action_listener { java.lang.System::exit(0) }
     popup.add(exititem)
-    
-    image = ImageIO.read(File.new("hours.png"))
+
+    image = java.awt.image.BufferedImage.new(18, 18, java.awt.image.BufferedImage::TYPE_INT_RGB)
+    g = image.getGraphics()
+    font = java.awt.Font.new("Verdana", java.awt.Font::BOLD, 11)
+    g.setFont(font)
+    g.setColor(java.awt.Color.new(200, 200, 200))
+
     tray_icon = TrayIcon.new(image, "DTIME!", popup)
     tray_icon.image_auto_size = true
     tray = java.awt.SystemTray::system_tray
     tray.add(tray_icon)
     
     old_dtime = nil
-    while sleep 1
-      dtime_hours_only = Dtime.current_dtime_formatted_hours_only
-      if dtime_hours_only != old_dtime
-        image = ImageIO.read(File.new("hours.png"))
-        g = image.getGraphics()
-        g.drawString(dtime_hours_only, 0, 14)
+
+    while sleep 0.05
+      dtime_info = Dtime.dtime_info
+      dtime_hours = Dtime.current_dtime_formatted_hours(dtime_info)
+
+      if dtime_hours != old_dtime
+        g.clearRect(0, 0, 100, 100)
+
+        g.drawString(dtime_hours, 1, 14)
         tray_icon.setImage(image)
       end
 
-      tray_icon.setToolTip(Dtime.current_dtime_formatted)
-      old_dtime = dtime_hours_only
+      current_dtime = Dtime.current_dtime_formatted(dtime_info)
+      tray_icon.setToolTip(current_dtime)
+      dtime_in_menu.setLabel(current_dtime)
+
+      old_dtime = dtime_hours
     end
   end
 
@@ -39,20 +54,23 @@ class Dtime # terrible hack-job prototype
     seconds_today * 1000 / 864
   end
 
-  def self.current_dtime_formatted
+  def self.dtime_info
     dtime = self.current_dtime
-    s =  dtime % 100
-    m = (dtime / 100) % 10
-    h = (dtime - (m + s)) / 1000
-    "#{"%02d" % h}:#{m}:#{"%02d" % s}"
+    {
+      :seconds => dtime % 100,
+      :minutes => (dtime / 100) % 10,
+      :hours => dtime / 1000
+    }      
   end
 
-  def self.current_dtime_formatted_hours_only
-    dtime = self.current_dtime
-    s =  dtime % 100
-    m = (dtime / 100) % 10
-    h = (dtime - (m + s)) / 1000
-    "%02d" % h
+  def self.current_dtime_formatted(now=nil)
+    now ||= dtime_components
+    "#{"%02d" % now[:hours]}:#{now[:minutes]}:#{"%02d" % now[:seconds]}"
+  end
+
+  def self.current_dtime_formatted_hours(now=nil)
+    now ||= dtime_components
+    "%02d" % now[:hours]
   end
 
   private
