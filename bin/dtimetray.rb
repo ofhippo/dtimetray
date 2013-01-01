@@ -19,7 +19,9 @@ class Dtime # terrible hack-job prototype
     popup.add(exititem)
 
     image = java.awt.image.BufferedImage.new(18, 18, java.awt.image.BufferedImage::TYPE_INT_RGB)
-    g = image.getGraphics()
+    image_width = image.getWidth
+    image_height = image.getHeight
+    g = image.getGraphics
     font = java.awt.Font.new("Verdana", java.awt.Font::BOLD, 11)
     g.setFont(font)
     g.setColor(java.awt.Color.new(200, 200, 200))
@@ -29,23 +31,35 @@ class Dtime # terrible hack-job prototype
     tray = java.awt.SystemTray::system_tray
     tray.add(tray_icon)
     
-    old_dtime = nil
+    old_minutes = old_hours = nil
 
     while sleep 0.4
       dtime_info = Dtime.dtime_info
-      dtime_hours = Dtime.current_dtime_formatted_hours(dtime_info)
+      current_hours = dtime_info[:hours]
+      current_minutes = dtime_info[:minutes]
 
-      if dtime_hours != old_dtime
-        g.clearRect(0, 0, 100, 100)
-        g.drawString(dtime_hours, 1, 13)
-        tray_icon.setImage(image)
+      if current_minutes != old_minutes
+        if current_minutes > 0
+          width = (current_minutes * image_width / 10.0).ceil
+          height = (image_height / 10.0).ceil
+          g.fillRect(0, image_height - height, width, height)
+          tray_icon.setImage(image)
+        end
+
+        if old_hours != current_hours
+          g.clearRect(0, 0, 100, 100)
+          dtime_hours_formatted = Dtime.current_dtime_formatted_hours(dtime_info)
+          g.drawString(dtime_hours_formatted, 1, 13)
+          tray_icon.setImage(image)
+        end
       end
-
+      
       current_dtime = Dtime.current_dtime_formatted(dtime_info)
       tray_icon.setToolTip(current_dtime)
       dtime_in_menu.setLabel(current_dtime)
 
-      old_dtime = dtime_hours
+      old_hours = current_hours
+      old_minutes = current_minutes
     end
   end
 
