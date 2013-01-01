@@ -31,35 +31,30 @@ class Dtime # terrible hack-job prototype
     tray = java.awt.SystemTray::system_tray
     tray.add(tray_icon)
     
-    old_minutes = old_hours = nil
+    old = {}
 
     while sleep 0.4
-      dtime_info = Dtime.dtime_info
-      current_hours = dtime_info[:hours]
-      current_minutes = dtime_info[:minutes]
+      now = Dtime.dtime_info
 
-      if current_minutes != old_minutes
-        if current_minutes > 0
-          width = (current_minutes * image_width / 10.0).ceil
-          height = (image_height / 10.0).ceil
-          g.fillRect(0, image_height - height, width, height)
-          tray_icon.setImage(image)
-        end
-
-        if old_hours != current_hours
+      if old[:minutes] != now[:minutes]
+        if old[:hours] != now[:hours]
           g.clearRect(0, 0, 100, 100)
           dtime_hours_formatted = Dtime.current_dtime_formatted_hours(dtime_info)
           g.drawString(dtime_hours_formatted, 1, 13)
-          tray_icon.setImage(image)
         end
+
+        bar_width = (now[:minutes] * image_width / 10.0).ceil
+        bar_height = (image_height / 10.0).ceil
+        g.fillRect(0, image_height - bar_height, bar_width, bar_height)
+
+        tray_icon.setImage(image)
       end
       
-      current_dtime = Dtime.current_dtime_formatted(dtime_info)
+      current_dtime = Dtime.current_dtime_formatted(now)
       tray_icon.setToolTip(current_dtime)
       dtime_in_menu.setLabel(current_dtime)
 
-      old_hours = current_hours
-      old_minutes = current_minutes
+      old = now
     end
   end
 
