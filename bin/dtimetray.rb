@@ -2,11 +2,10 @@
 
 include Java
 import java.awt.TrayIcon
-import java.awt.Toolkit
 import javax.imageio.ImageIO
 import java.io.File;
 
-class Dtime # terrible hack-job prototype
+class Dtime
 
   def self.run
     popup = java.awt.PopupMenu.new
@@ -21,6 +20,7 @@ class Dtime # terrible hack-job prototype
     image = java.awt.image.BufferedImage.new(18, 18, java.awt.image.BufferedImage::TYPE_INT_RGB)
     image_width = image.getWidth
     image_height = image.getHeight
+
     g = image.getGraphics
     font = java.awt.Font.new("Verdana", java.awt.Font::BOLD, 11)
     g.setFont(font)
@@ -32,37 +32,44 @@ class Dtime # terrible hack-job prototype
     tray.add(tray_icon)
     
     old = {}
+    old_bar_width = nil
 
     while sleep 0.4
-      now = Dtime.dtime_info
+      now = Dtime.dtime_now_hash
 
-      if old[:minutes] != now[:minutes]
+      if old[:seconds] != now[:seconds]
         if old[:hours] != now[:hours]
           g.clearRect(0, 0, 100, 100)
-          dtime_hours_formatted = Dtime.current_dtime_formatted_hours(dtime_info)
+          dtime_hours_formatted = "%02d" % now[:hours]
           g.drawString(dtime_hours_formatted, 1, 13)
         end
 
-        bar_width = (now[:minutes] * image_width / 10.0).ceil
-        bar_height = (image_height / 10.0).ceil
-        g.fillRect(0, image_height - bar_height, bar_width, bar_height)
+        bar_width = ((now[:minutes] * 100 + now[:seconds]) * image_width / (100.0 * 10.0)).ceil
 
-        tray_icon.setImage(image)
+        if bar_width != old_bar_width
+          bar_height = (image_height / 10.0).ceil
+          g.fillRect(0, image_height - bar_height, bar_width, bar_height)
+
+          tray_icon.setImage(image)
+          old_bar_width = bar_width
+        end
       end
       
-      current_dtime = Dtime.current_dtime_formatted(now)
-      tray_icon.setToolTip(current_dtime)
-      dtime_in_menu.setLabel(current_dtime)
+      current_dtime_formatted = "#{"%02d" % now[:hours]}:#{now[:minutes]}:#{"%02d" % now[:seconds]}"
+      tray_icon.setToolTip(current_dtime_formatted)
+      dtime_in_menu.setLabel(current_dtime_formatted)
 
       old = now
     end
   end
 
   def self.current_dtime
+    now = Time.now
+    ms_today = now.to_f - Time.local(now.year, now.month, now.day, 0).to_f
     (ms_today * 1000 / 864).to_i
   end
 
-  def self.dtime_info
+  def self.dtime_now_hash
     dtime = self.current_dtime
     {
       :seconds => dtime % 100,
@@ -70,24 +77,6 @@ class Dtime # terrible hack-job prototype
       :hours => dtime / 1000
     }      
   end
-
-  def self.current_dtime_formatted(now=nil)
-    now ||= dtime_components
-    "#{"%02d" % now[:hours]}:#{now[:minutes]}:#{"%02d" % now[:seconds]}"
-  end
-
-  def self.current_dtime_formatted_hours(now=nil)
-    now ||= dtime_components
-    "%02d" % now[:hours]
-  end
-
-  private
-
-  def self.ms_today
-    now = Time.now
-    now.to_f - Time.local(now.year, now.month, now.day, 0).to_f
-  end
-
 end
 
 Dtime.run
