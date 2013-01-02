@@ -3,7 +3,6 @@
 include Java
 import java.awt.TrayIcon
 import javax.imageio.ImageIO
-import java.io.File;
 
 class Dtime
 
